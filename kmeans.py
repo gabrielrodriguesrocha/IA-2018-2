@@ -1,11 +1,12 @@
 import pandas as pd
 import numpy as np
 import seaborn as sns
+import sys
 from sklearn.metrics import adjusted_rand_score
 from scipy.spatial.distance import squareform, pdist
 from scipy.spatial import distance_matrix
 
-def kmeans(file, max_iter, k):
+def kmeans(file, k, max_iter):
     df=pd.read_csv(file, sep='\t',header=0)
     real_clusters = pd.read_csv(file.replace('.txt', 'Real.clu'), sep='\t',header=None)
     clusters = df.iloc[np.random.randint(low=0, high=df.shape[0] - 1, size=int(k)), 1:]
@@ -18,10 +19,12 @@ def kmeans(file, max_iter, k):
         clusters = points.groupby('cluster').mean()
 
 
-    #print(d)
     l_dict = dict(zip(set(points['cluster']), range(len(points['cluster']))))
     points = points.assign(normalized_cluster = [l_dict[x] for x in points['cluster']])
     print('ARI (Hubert-Arabie) = %lf' % adjusted_rand_score(real_clusters.values[:, 1], points['normalized_cluster'].values))
     figname = 'plots/kmeans/' + file.split('.txt')[0].split('/')[1] + '-k-' + str(k) + '-iter-' + str(max_iter) + '.png'
     sns.pairplot(x_vars=["d1"], y_vars=["d2"], data=points, hue="normalized_cluster", height=5).savefig(figname)
-    return points[['sample_label', 'normalized_cluster']].to_csv(file.split('.txt')[0] + '-kmeans.clu', sep='\t', index=False, header=None)
+    return points[['sample_label', 'normalized_cluster']].to_csv(file.split('.txt')[0] + '-kmeans' + str(k) + '.clu', sep='\t', index=False, header=None)
+
+if __name__ == "__main__":
+    kmeans(sys.argv[1], sys.argv[2], sys.argv[3])
